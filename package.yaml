@@ -1,0 +1,8 @@
+name: fs
+description: Filesystem and XDG functions, dealing with Windows and Unix paths.
+environment:
+  sdk: ^2.0.0-alpha.120
+dependencies:
+  host:
+    url: github.com/toitlang/pkg-host
+    version: ^1.11.0
