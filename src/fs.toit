@@ -310,15 +310,57 @@ basename path/string -> string:
   return is-windows_ ? windows.basename path : posix.basename path
 
 /**
-Creates a path relative to the given $base path.
+Joins any number of path elements into a single path, separating them
+  with the OS specific $SEPARATOR.
+
+Empty elements are ignored.
+Returns "" (the empty string) if there are no elements or all elements are empty.
+Otherwise, calls $clean before returning the result.
+
+On Windows the result is only a UNC path (like `//host/share`) if the first
+  element is a UNC path.
+
+# Examples
+## Windows
+The examples use `/` as `\\` would need to be escaped in the strings.
+The results would always return `\\` instead of `/`.
+```
+join []                         // ""
+join [""]                       // ""
+join ["foo"]                    // "foo"
+join ["foo", "bar"]             // "foo/bar"
+join ["foo", "bar", "baz"]      // "foo/bar/baz"
+join ["foo", "", "bar"]         // "foo/bar"
+join ["c:", "foo"]              // "c:foo"
+join ["c:", "/foo"]             // "c:foo/bar"
+join ["c:/", "foo"]             // "c:/foo"
+join ["//host/share", "foo"]    // "//host/share/foo"
+join ["//host", "share", "foo"] // "//host/share/foo"
+join ["/", "/", "foo"]          // "/foo"
+```
+
+## Posix
+```
+join []                         // ""
+join [""]                       // ""
+join ["foo"]                    // "foo"
+join ["foo", "bar"]             // "foo/bar"
+join ["foo", "bar", "baz"]      // "foo/bar/baz"
+join ["foo", "", "bar"]         // "foo/bar"
+join ["/", "foo", "", "bar"]    // "/foo/bar"
+join ["/foo", "", "bar"]        // "/foo/bar"
+```
 */
-join base/string path/string --path-platform/string=system.platform -> string:
-  if is-rooted path: return path
-  if path-platform == system.PLATFORM-WINDOWS:
-    if base.size == 2 and base[1] == ':':
-      // If the base is really just a drive letter, then we must not add a separator.
-      return clean "$base$path"
-  return clean "$base/$path"
+join elements/List -> string:
+  return is-windows_ ? windows.join elements : posix.join elements
+
+/**
+Variant of $(join elements).
+
+Joins the given $base and $path1, and optionally $path2, $path3 and $path4.
+*/
+join base/string path1/string path2/string="" path3/string="" path4/string="" -> string:
+  return join [base, path1, path2, path3, path4]
 
 /**
 Cleans a path, removing redundant path separators and resolving "." and ".."

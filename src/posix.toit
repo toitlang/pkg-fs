@@ -163,6 +163,39 @@ basename path/string -> string:
   return path[i + 1 .. end]
 
 /**
+Joins any number of path elements into a single path, separating them with `/`.
+
+Empty elements are ignored.
+Returns "" (the empty string) if there are no elements or all elements are empty.
+Otherwise, calls $clean before returning the result.
+
+# Examples
+```
+join []                         // ""
+join [""]                       // ""
+join ["foo"]                    // "foo"
+join ["foo", "bar"]             // "foo/bar"
+join ["foo", "bar", "baz"]      // "foo/bar/baz"
+join ["foo", "", "bar"]         // "foo/bar"
+join ["/", "foo", "", "bar"]    // "/foo/bar"
+join ["/foo", "", "bar"]        // "/foo/bar"
+```
+*/
+join elements/List -> string:
+  non-empty := elements.filter: it != ""
+  if non-empty.is-empty: return ""
+
+  return clean (non-empty.join SEPARATOR)
+
+/**
+Variant of $(join elements).
+
+Joins the given $base and $path1, and optionally $path2, $path3 and $path4.
+*/
+join base/string path1/string path2/string="" path3/string="" path4/string="" -> string:
+  return join [base, path1, path2, path3, path4]
+
+/**
 Cleans a path, removing redundant path separators and resolving "." and ".."
   segments.
 This operation is purely syntactical.

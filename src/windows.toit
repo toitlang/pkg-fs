@@ -282,6 +282,94 @@ basename path/string -> string:
   return path[i + 1 .. end]
 
 /**
+Joins any number of path elements into a single path, separating them with `\\`.
+
+Empty elements are ignored.
+Returns "" (the empty string) if there are no elements or all elements are empty.
+Otherwise, calls $clean before returning the result.
+
+The result is only a UNC path (like `//host/share`) if the first
+  element is a UNC path.
+
+# Examples
+The examples use `/` as `\\` would need to be escaped in the strings.
+The results would always return `\\` instead of `/`.
+```
+join []                         // ""
+join [""]                       // ""
+join ["foo"]                    // "foo"
+join ["foo", "bar"]             // "foo/bar"
+join ["foo", "bar", "baz"]      // "foo/bar/baz"
+join ["foo", "", "bar"]         // "foo/bar"
+join ["c:", "foo"]              // "c:foo"
+join ["c:", "/foo"]             // "c:foo/bar"
+join ["c:/", "foo"]             // "c:/foo"
+join ["//host/share", "foo"]    // "//host/share/foo"
+join ["//host", "share", "foo"] // "//host/share/foo"
+join ["/", "/", "foo"]          // "/foo"
+```
+*/
+join elements/List -> string:
+  max-size :=
+      (elements.reduce --initial=0: | a b | a + b.size)
+        + elements.size - 1
+        + 1  // We add an additional character to avoid root local device paths.
+  result := ByteArray max-size
+
+  target-pos := 0
+  elements.do: | segment/string |
+    if segment == "": continue.do
+    last-char := target-pos == 0 ? 0 : result[target-pos - 1]
+    segment-start-pos := 0
+    if target-pos == 0:
+      // Write the first segment verbatim below. No need to deal with separators.
+    else if is-separator last-char:
+      // If the last character was a separator, we strip any leading separators.
+      // We need to avoid creating a UNC path from individual segments.
+      // For example `["/", "foo"]` should become `/foo` and not `//foo`.
+      // In theory we don't need to strip leading separators if we have already
+      // a volume, since 'clean' will get rid of multiple separators. However, it's
+      // not that easy to figure out when a volume name is complete, and it's easy
+      // to remove the leading separators.
+      //   `["//host", "//share"]` -> `//host/share` and not `//host//share`?
+      // If the segment consists entirely of separators we drop the segment.
+      while segment-start-pos < segment.size and is-separator segment[segment-start-pos]:
+        segment-start-pos++
+      if target-pos == 1 and is-separator result[0] and segment.starts-with "??":
+        // If the path is '/' and the next segment is '??' add an extra './' to
+        // create '/./??' rather than '/??/' which is a root local device path.
+        result[target-pos++] = '.'
+        result[target-pos++] = SEPARATOR-CHAR
+    else if last-char == ':' and target-pos == 2:
+      // Note: Go does this for any segment and not just if the colon is in the 2nd
+      // position.
+      // If the path ends in a colon, keep the path relative to the current
+      // directory on a drive, and don't add a separator. If the segment starts
+      // with a separator, it will make the path absolute.
+      //
+      // For example: `c:` + `foo`  -> `c:foo` and not `c:/foo`.
+      //          but `c:` + `/foo` -> `c:/foo`.
+      /* Do nothing. Don't add a separator. */
+    else:
+      // Otherwise, add a separator.
+      result[target-pos++] = SEPARATOR-CHAR
+
+    result.replace target-pos segment segment-start-pos
+    target-pos += segment.size - segment-start-pos
+
+  // Nothing was added. Should not happen, but doesn't cost to check.
+  if target-pos == 0: return ""
+  return clean (result[.. target-pos]).to-string
+
+/**
+Variant of $(join elements).
+
+Joins the given $base and $path1, and optionally $path2, $path3 and $path4.
+*/
+join base/string path1/string path2/string="" path3/string="" path4/string="" -> string:
+  return join [base, path1, path2, path3, path4]
+
+/**
 Cleans a path, removing redundant path separators and resolving "." and ".."
   segments.
 This operation is purely syntactical.
