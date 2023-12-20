@@ -37,7 +37,7 @@ Drive relative paths are drive paths that are relative to the current
   and should not be used anymore. On current versions of Windows there
   isn't a drive-specific working directory anymore, although there are hidden
   environment variables to indicate drive-specific current working
-  directories. If the drive of a drive-relative path is the same
+  directories. If the drive of a drive relative path is the same
   as the current working directory, then the path is equivalent to a
   relative path. If the drive is different, then the path is equivalent
   to an absolute path (unless the environment variable is set).
@@ -48,7 +48,7 @@ Rooted paths start with a path separator. These are rooted on the
   Example: `\\path\\to\\file`.
 
 Relative paths are paths that are relative to the current working
-  directory. They are not rooted
+  directory. They are not rooted.
 
 Universal Naming Convention (UNC) absolute paths are, more or less, Window's
   alternative to URLs. They are used to access remote
@@ -77,8 +77,7 @@ Examples for Windows paths. Each example is followed by the result of calling $i
 - `C:Projects\\apilibrary\\apilibrary.sln` - a relative path from the current directory oft he `C:` drive.
 */
 
-is-windows_ -> bool:
-  return system.platform == system.PLATFORM-WINDOWS
+is-windows_/bool ::= system.platform == system.PLATFORM-WINDOWS
 
 /** The default path separator on this systems. */
 SEPARATOR ::= is-windows_ ? windows.SEPARATOR : posix.SEPARATOR
@@ -360,7 +359,7 @@ clean "c:/foo/////bar"           // "c:/foo/bar"
 clean "c:/foo/./bar"             // "c:/foo/bar"
 ```
 
-## Linux:
+## Posix:
 ```
 clean ""                     // "."
 clean "foo"                  // "foo"
@@ -466,8 +465,7 @@ clean_ path/string --volume-name-size/int --separator/int -> string:
   if target-index == volume-name-size:
     if volume-name-size == 0: return "."
     if volume-name-size > 2:
-      // TODO(florian): can we reach here?
-      unreachable
+      // Probably unreachable, but can't hurt to special case.
       // Must be a UNC path.
       // For example '//host/share'
       return path[..volume-name-size]
