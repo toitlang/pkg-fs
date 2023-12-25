@@ -2,7 +2,8 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the package's LICENSE file.
 
-import .fs show clean_
+import .shared_
+import host.directory
 
 /**
 Windows implementation of the `fs` library.
@@ -65,7 +66,7 @@ All examples use slashes, but the function works with both slashes and backslash
 */
 is-rooted path/string -> bool:
   if path.starts-with "\\" or path.starts-with "/": return true
-  return path.size >= 2 and path[1] == ':'
+  return path.size >= 2 and is-volume-letter_ path[0] and path[1] == ':'
 
 /**
 Whether the given $path is relative.
@@ -76,6 +77,28 @@ to other paths.
 */
 is-relative path/string -> bool:
   return not is-rooted path
+
+/**
+Convert the $path to an absolute path by prepending the current working directory to the path
+if it is not already absolute.
+
+The result is cleaned by $clean before being returned.
+*/
+to-absolute path/string -> string:
+  if is-absolute path: return clean path
+  if is-rooted path and is-absolute-volume directory.cwd:
+    return join [volume directory.cwd, path]
+  return join [directory.cwd, path]
+
+/**
+Convert the $path to a relative path in relation to $base.
+
+If it is not possible to be relative, returns the absolute path of $path.
+
+The result is cleaned by $clean before being returned.
+*/
+to-relative path/string base/string -> string:
+  return to-relative_ path base --handle-different-root
 
 /**
 Returns whether the given $path starts with the given $prefix.
@@ -143,6 +166,13 @@ is-absolute "../foo/bar"       // False.
 ```
 */
 is-absolute path/string -> bool:
+  return is-absolute-volume path or is-absolute-unc path
+
+/**
+Path starts with a UNC volume.
+For example: `//host/share`, `//./UNC/host/share`, ...
+*/
+is-absolute-unc path/string -> bool:
   volume-name-size := volume-name-size_ path
 
   if volume-name-size == 0:
@@ -150,19 +180,34 @@ is-absolute path/string -> bool:
     // For example: `foo/bar`, `../foo`, `\foo\bar`, ...
     return false
 
-  assert: path.size >= 2
-  if is-separator path[0] and is-separator path[1]:
-    // Path starts with a UNC volume.
-    // For example: `//host/share`, `//./UNC/host/share`, ...
-    return true
+  return is-separator path[0]
 
-  if path.size == volume-name-size:
-    // Path is just a volume name.
-    // For example: `c:`.
-    return false
+/**
+Path starts with a drive indicator.
+For example: `c:\\', 'd:/`, ...
+*/
+is-absolute-volume path/string -> bool:
+  return path.size >= 3 and
+      is-volume-letter_ path[0] and
+      path[1] == ':' and
+      is-separator path[2]
 
-  // Make sure it's not just a drive-relative path, like `c:foo/bar`.
-  return is-separator path[volume-name-size]
+/**
+Is the character $letter a valid volume letter ([a-zA-Z])
+*/
+is-volume-letter_ letter/int -> bool:
+  return 'a' <= letter <= 'z' or 'A' <= letter <= 'Z'
+
+/**
+Returns the volume indicator from an absolute path.
+
+"C:\tmp" -> "C:"
+
+*/
+volume path/string -> string?:
+  if not is-absolute path: return null
+  volume-name-size := volume-name-size_ path
+  return path[..volume-name-size]
 
 /**
 Strips the $basename component of a given $path.
@@ -370,6 +415,38 @@ join base/string path1/string path2/string="" path3/string="" path4/string="" ->
   return join [base, path1, path2, path3, path4]
 
 /**
+Splits a path into its components using the seperator valid for the current OS.
+
+Split on both '/', '\\' and ':'.
+*/
+split path/string -> List:
+  if path == "": return []
+
+  result := []
+  unc-prefix := null
+  if path.starts-with "//" or path.starts-with "\\\\":
+    unc-prefix = path[..2]
+    path = path[2..]
+  else if (path.index-of ":\\") == 1 or (path.index-of ":/") == 1:
+    result.add path[..3]
+    path = path[3..]
+  else if path.starts-with "\\" or path.starts-with "/":
+    result.add "\\"
+    path = path[1..]
+  else if (path.index-of ":") == 1:
+    result.add path[..2]
+    path = path[2..]
+
+  (path.split "/" --drop-empty).do:
+    result.add-all (it.split SEPARATOR --drop-empty)
+
+  if unc-prefix:
+    if result.is-empty: result.add unc-prefix
+    else: result[0] = "$unc-prefix$result[0]"
+
+  return result
+
+/**
 Cleans a path, removing redundant path separators and resolving "." and ".."
   segments.
 This operation is purely syntactical.
@@ -441,7 +518,7 @@ clean-windows_ path/string -> string
   return result
 
 volume-name-size_ path/string -> int:
-  if path.size >= 2 and path[1] == ':':
+  if path.size >= 2 and is-volume-letter_ path[0] and path[1] == ':':
     // Path starts with a drive letter.
     // For example: `c:`.
     // Only drives with a single ascii character are supported.

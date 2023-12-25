@@ -2,7 +2,8 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the package's LICENSE file.
 
-import .fs show clean_
+import .shared_
+import host.directory
 
 /**
 Posix implementation of the `fs` library.
@@ -57,6 +58,24 @@ Whether the given $path is relative.
 */
 is-relative path/string -> bool:
   return not is-absolute path
+
+/**
+Convert the $path to an absolute path by prepending the current working directory to the path
+if it is not already absolute.
+
+The result is cleaned by $clean before being returned.
+*/
+to-absolute path/string -> string:
+  if is-absolute path: return clean path
+  return join [directory.cwd, path]
+
+/**
+Convert the $path to a relative path in relation to $base.
+
+The result is cleaned by $clean before being returned.
+*/
+to-relative path/string base/string -> string:
+  return to-relative_ path base
 
 volume-name-size_ path/string -> int:
   return 0
@@ -194,6 +213,16 @@ Joins the given $base and $path1, and optionally $path2, $path3 and $path4.
 */
 join base/string path1/string path2/string="" path3/string="" path4/string="" -> string:
   return join [base, path1, path2, path3, path4]
+
+/**
+Splits a path into its components using the seperator valid for the current OS.
+
+Split on '/'. If the path is absolute, the first element will be "/" indicating an absolute path
+*/
+split path/string -> List:
+  result := is-absolute path ? [ "/" ] : []
+  result.add-all (path.split "/" --drop-empty)
+  return result
 
 /**
 Cleans a path, removing redundant path separators and resolving "." and ".."

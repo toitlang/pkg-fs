@@ -39,6 +39,9 @@ WINDOWS-TESTS ::= {
   "//host/share/foo/bar": true,
   "\\\\?\\a\\b\\c": true,
   "\\??\\a\\b\\c": true,
+  "æ:\\": false,
+  "🙈:\\": false,
+  "\\\\?\\z:": true,
 }
 
 main:
