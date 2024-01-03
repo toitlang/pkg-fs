@@ -223,7 +223,13 @@ is-volume-letter_ letter/int -> bool:
 /**
 Returns the volume indicator from an absolute path.
 
-"C:\tmp" -> "C:"
+# Examples
+The examples use `/` as `\\` would need to be escaped in the strings.
+The results would always return `\\` instead of `/`.
+```
+volume-indicator "C:/tmp"            // "C:"
+volume-indicator "//host/share/foo"  // "//host/share"
+```
 
 */
 volume-indicator path/string -> string?:
