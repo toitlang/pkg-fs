@@ -30,6 +30,7 @@ test-windows:
     expect-equals "$volume\\" (fs.to-absolute "/")
     expect-equals "$volume\\a\\b" (fs.to-absolute "/a/b")
     expect-equals "X:\\a\\b" (fs.to-absolute "X:a/b")
+    expect-equals "$directory.cwd\\a" (fs.to-absolute "$(volume)a")
   else:
     expect-equals directory.cwd (fs.to-absolute "/")
     expect-equals directory.cwd (fs.to-absolute "\\")

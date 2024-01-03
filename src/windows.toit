@@ -88,13 +88,17 @@ to-absolute path/string -> string:
   if is-absolute path: return clean path
 
   if is-rooted path:
-    if is-relative-volume path:
-      split-path := split path
-      split-path[0] = "$split-path[0]$SEPARATOR"
-      return join split-path
+    if is-drive-relative_ path:
+      if (is-drive-absolute_ directory.cwd) and directory.cwd[0..2] == path[0..2]:
+        return join [directory.cwd, path[(volume-name-size_ path)..]]
+      else:
+        split-path := split path
+        split-path[0] = "$split-path[0]$SEPARATOR"
+        return join split-path
     else:
-      if is-absolute-volume directory.cwd:
+      if is-drive-absolute_ directory.cwd:
         return join [volume-indicator directory.cwd, path]
+      // If the cwd is a UNC path, just use the default construction in the next line.
 
   return join [directory.cwd, path]
 
@@ -174,13 +178,13 @@ is-absolute "../foo/bar"       // False.
 ```
 */
 is-absolute path/string -> bool:
-  return is-absolute-volume path or is-absolute-unc path
+  return is-drive-absolute_ path or is-unc-absolute_ path
 
 /**
 Path starts with a UNC volume.
 For example: `//host/share`, `//./UNC/host/share`, ...
 */
-is-absolute-unc path/string -> bool:
+is-unc-absolute_ path/string -> bool:
   volume-name-size := volume-name-size_ path
 
   if volume-name-size == 0:
@@ -194,7 +198,7 @@ is-absolute-unc path/string -> bool:
 Path starts with an absolute drive indicator.
 For example: `c:\\', 'd:/`, ...
 */
-is-absolute-volume path/string -> bool:
+is-drive-absolute_ path/string -> bool:
   return path.size >= 3 and
       is-volume-letter_ path[0] and
       path[1] == ':' and
@@ -204,7 +208,7 @@ is-absolute-volume path/string -> bool:
 Path starts with a relative drive indicator.
 For example: `c:tmp', 'd:../foo`, 'e:', ...
 */
-is-relative-volume path/string -> bool:
+is-drive-relative_ path/string -> bool:
   return (path.size == 2 and
           is-volume-letter_ path[0] and
           path[1] == ':') or
@@ -454,7 +458,7 @@ split path/string -> List:
   volume-name-size := volume-name-size_ path
   if volume-name-size > 0:
     prefix := path[..volume-name-size]
-    if is-absolute-volume path: prefix = "$prefix$SEPARATOR"
+    if is-drive-absolute_ path: prefix = "$prefix$SEPARATOR"
     result.add prefix
 
     path = path[volume-name-size..]
