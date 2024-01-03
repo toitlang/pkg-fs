@@ -61,7 +61,7 @@ is-relative path/string -> bool:
 
 /**
 Convert the $path to an absolute path by prepending the current working directory to the path
-if it is not already absolute.
+  if it is not already absolute.
 
 The result is cleaned by $clean before being returned.
 */
@@ -70,7 +70,7 @@ to-absolute path/string -> string:
   return join [directory.cwd, path]
 
 /**
-Convert the $path to a relative path in relation to $base.
+Computes the relative path of $path with respect to $base.
 
 The result is cleaned by $clean before being returned.
 */
@@ -217,7 +217,8 @@ join base/string path1/string path2/string="" path3/string="" path4/string="" ->
 /**
 Splits a path into its components using the seperator valid for the current OS.
 
-Split on '/'. If the path is absolute, the first element will be "/" indicating an absolute path
+Splits on '/'.
+If the path is absolute, the first element is "/" indicating an absolute path
 */
 split path/string -> List:
   result := is-absolute path ? [ "/" ] : []

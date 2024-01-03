@@ -91,9 +91,9 @@ to-absolute path/string -> string:
   return join [directory.cwd, path]
 
 /**
-Convert the $path to a relative path in relation to $base.
+Computes the relative path of $path with respect to $base.
 
-If it is not possible to be relative, returns the absolute path of $path.
+Returns the absolute path of $path, if $path is not accessible relative to $base.
 
 The result is cleaned by $clean before being returned.
 */

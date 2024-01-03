@@ -194,7 +194,7 @@ is-relative path/string -> bool:
 
 /**
 Convert the $path to an absolute path by prepending the current working directory to the path
-if it is not already absolute.
+  if it is not already absolute.
 
 The result is cleaned by $clean before being returned.
 */
@@ -202,9 +202,9 @@ to-absolute path/string -> string:
   return is-windows_ ? windows.to-absolute path : posix.to-absolute path
 
 /**
-Convert the $path to a relative path in relation to $base.
+Computes the relative path of $path with respect to $base.
 
-If it is not possible to be relative, returns the absolute path of $path.
+Returns the absolute path of $path, if $path is not accessible relative to $base.
 
 The result is cleaned by $clean before being returned.
 */
@@ -385,7 +385,8 @@ join base/string path1/string path2/string="" path3/string="" path4/string="" ->
 /**
 Splits a path into its components using the seperator valid for the current OS.
 
-On Windows it will split on both '/', '\\' and ':', on posix it will split on '/' only.
+On Windows it splits on both '/', '\\' and ':', on Posix it splits on '/' only.
+If a path (potentially after a leading volume name) starts with a separator, then the entry before the first path segment is a separator.
 */
 split path/string -> List:
   return is-windows_ ? windows.split path : posix.split path
