@@ -193,7 +193,7 @@ is-relative path/string -> bool:
   return not is-rooted path
 
 /**
-Convert the $path to an absolute path by prepending the current working directory to the path
+Converts the $path to an absolute path by prepending the current working directory to the path
   if it is not already absolute.
 
 The result is cleaned by $clean before being returned.
@@ -386,7 +386,8 @@ join base/string path1/string path2/string="" path3/string="" path4/string="" ->
 Splits a path into its components using the seperator valid for the current OS.
 
 On Windows it splits on both '/', '\\' and potentially after ':', on Posix it splits on '/' only.
-If a path (potentially after a leading volume name) starts with a separator, then the entry before the first path segment is a separator.
+If a path (potentially after a leading volume name) starts with a separator, then
+  the entry before the first path segment is a separator.
 */
 split path/string -> List:
   return is-windows_ ? windows.split path : posix.split path

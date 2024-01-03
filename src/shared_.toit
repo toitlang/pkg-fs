@@ -7,8 +7,8 @@ import .fs
 /**
 Cleans the path.
 
-The $path must already use the $separator as separators. Typically this is achieved
-  by calling $from-slash.
+The $path must use the native $separator as separators (`\\` on Windows, `/` otherwise). Typically
+  this is achieved by calling $from-slash.
 */
 clean_ path/string --volume-name-size/int --separator/int -> string:
   // Note that volume-name-size can only be > 0 if we are on Windows.

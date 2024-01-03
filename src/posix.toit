@@ -60,7 +60,7 @@ is-relative path/string -> bool:
   return not is-absolute path
 
 /**
-Convert the $path to an absolute path by prepending the current working directory to the path
+Converts the $path to an absolute path by prepending the current working directory to the path
   if it is not already absolute.
 
 The result is cleaned by $clean before being returned.

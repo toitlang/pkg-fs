@@ -79,8 +79,8 @@ is-relative path/string -> bool:
   return not is-rooted path
 
 /**
-Convert the $path to an absolute path by prepending the current working directory to the path
-if it is not already absolute.
+Converts the $path to an absolute path by prepending the current working directory to the path
+  if it is not already absolute.
 
 The result is cleaned by $clean before being returned.
 */
@@ -439,7 +439,7 @@ join base/string path1/string path2/string="" path3/string="" path4/string="" ->
 /**
 Splits a path into its components using the seperator valid for the current OS.
 
-Split on both '/', '\\' and potentially after ':'.
+Splits on both '/', '\\' and potentially after ':'.
 */
 split path/string -> List:
   if path == "": return []
@@ -452,7 +452,7 @@ split path/string -> List:
     result.add prefix
 
     path = path[volume-name-size..]
-  else if path.starts-with "/" or path.starts-with "\\":
+  else if is-separator path[0]:
     result.add SEPARATOR
 
   (path.split "/" --drop-empty).do:
