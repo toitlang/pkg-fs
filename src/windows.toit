@@ -86,8 +86,16 @@ The result is cleaned by $clean before being returned.
 */
 to-absolute path/string -> string:
   if is-absolute path: return clean path
-  if is-rooted path and is-absolute-volume directory.cwd:
-    return join [volume directory.cwd, path]
+
+  if is-rooted path:
+    if is-relative-volume path:
+      split-path := split path
+      split-path[0] = "$split-path[0]$SEPARATOR"
+      return join split-path
+    else:
+      if is-absolute-volume directory.cwd:
+        return join [volume-indicator directory.cwd, path]
+
   return join [directory.cwd, path]
 
 /**
@@ -183,7 +191,7 @@ is-absolute-unc path/string -> bool:
   return is-separator path[0]
 
 /**
-Path starts with a drive indicator.
+Path starts with an absolute drive indicator.
 For example: `c:\\', 'd:/`, ...
 */
 is-absolute-volume path/string -> bool:
@@ -191,6 +199,20 @@ is-absolute-volume path/string -> bool:
       is-volume-letter_ path[0] and
       path[1] == ':' and
       is-separator path[2]
+
+/**
+Path starts with a relative drive indicator.
+For example: `c:tmp', 'd:../foo`, 'e:', ...
+*/
+is-relative-volume path/string -> bool:
+  return (path.size == 2 and
+          is-volume-letter_ path[0] and
+          path[1] == ':') or
+         (path.size >= 3 and
+          is-volume-letter_ path[0] and
+          path[1] == ':' and
+          not is-separator path[2])
+
 
 /**
 Is the character $letter a valid volume letter ([a-zA-Z])
@@ -204,7 +226,7 @@ Returns the volume indicator from an absolute path.
 "C:\tmp" -> "C:"
 
 */
-volume path/string -> string?:
+volume-indicator path/string -> string?:
   if not is-absolute path: return null
   volume-name-size := volume-name-size_ path
   return path[..volume-name-size]
@@ -417,32 +439,24 @@ join base/string path1/string path2/string="" path3/string="" path4/string="" ->
 /**
 Splits a path into its components using the seperator valid for the current OS.
 
-Split on both '/', '\\' and ':'.
+Split on both '/', '\\' and potentially after ':'.
 */
 split path/string -> List:
   if path == "": return []
 
   result := []
-  unc-prefix := null
-  if path.starts-with "//" or path.starts-with "\\\\":
-    unc-prefix = path[..2]
-    path = path[2..]
-  else if (path.index-of ":\\") == 1 or (path.index-of ":/") == 1:
-    result.add path[..3]
-    path = path[3..]
-  else if path.starts-with "\\" or path.starts-with "/":
-    result.add "\\"
-    path = path[1..]
-  else if (path.index-of ":") == 1:
-    result.add path[..2]
-    path = path[2..]
+  volume-name-size := volume-name-size_ path
+  if volume-name-size > 0:
+    prefix := path[..volume-name-size]
+    if is-absolute-volume path: prefix = "$prefix$SEPARATOR"
+    result.add prefix
+
+    path = path[volume-name-size..]
+  else if path.starts-with "/" or path.starts-with "\\":
+    result.add SEPARATOR
 
   (path.split "/" --drop-empty).do:
     result.add-all (it.split SEPARATOR --drop-empty)
-
-  if unc-prefix:
-    if result.is-empty: result.add unc-prefix
-    else: result[0] = "$unc-prefix$result[0]"
 
   return result
 

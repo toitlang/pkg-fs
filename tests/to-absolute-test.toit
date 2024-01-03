@@ -24,14 +24,17 @@ test-windows:
   if windows.is-absolute-volume directory.cwd:
     // It seems impossible to fake UNC paths reliably on windows, so to test this probably, test
     // both from an UNC cwd (in powershell) and a local drive cwd.
-    volume := windows.volume directory.cwd
+    volume := windows.volume-indicator directory.cwd
 
     expect-equals "$volume\\" (fs.to-absolute "\\") // clean removed the trainling backslash
     expect-equals "$volume\\" (fs.to-absolute "/")
     expect-equals "$volume\\a\\b" (fs.to-absolute "/a/b")
+    expect-equals "X:\\a\\b" (fs.to-absolute "X:a/b")
   else:
     expect-equals directory.cwd (fs.to-absolute "/")
     expect-equals directory.cwd (fs.to-absolute "\\")
+    expect-equals "X:\\a\\b" (fs.to-absolute "X:a/b")
+    expect-equals "$directory.cwd\\a" (fs.to-absolute "a")
 
 
 main:

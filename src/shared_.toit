@@ -112,7 +112,7 @@ clean_ path/string --volume-name-size/int --separator/int -> string:
 /**
 Convert the $path to a relative path in relation to $base.
 
-If it is not possible to be relative, returns the absolute path of $path.
+If it is not possible to be relative, return the absolute path of $path.
 
 The result is cleaned by $clean before being returned.
 */

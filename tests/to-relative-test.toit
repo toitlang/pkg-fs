@@ -22,6 +22,7 @@ test-windows:
   expect-equals "..\\..\\b" (fs.to-relative "c:\\a\\b" "c:\\a\\c\\d")
   expect-equals "c:\\a\\b" (fs.to-relative "c:\\a\\b" "h:\\a\\c\\d")
   expect-equals "..\\..\\b" (fs.to-relative "\\\\host\\share\\b" "\\\\host\\share\\a\\b")
+  expect-equals "\\\\host\\share1\\b" (fs.to-relative "\\\\host\\share1\\b" "\\\\host\\share2\\a\\b")
 
 main:
   if system.platform == system.PLATFORM-WINDOWS:
