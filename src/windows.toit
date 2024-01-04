@@ -205,7 +205,7 @@ is-drive-absolute_ path/string -> bool:
       is-separator path[2]
 
 /**
-Returns whether the given $ath starts with a relative drive indicator.
+Returns whether the given $path starts with a relative drive indicator.
 For example: `c:tmp', 'd:../foo`, 'e:', ...
 */
 is-drive-relative_ path/string -> bool:
