@@ -195,7 +195,7 @@ is-unc-absolute_ path/string -> bool:
   return is-separator path[0]
 
 /**
-Path starts with an absolute drive indicator.
+Returns whether the given $path starts with an absolute drive indicator.
 For example: `c:\\', 'd:/`, ...
 */
 is-drive-absolute_ path/string -> bool:
@@ -205,7 +205,7 @@ is-drive-absolute_ path/string -> bool:
       is-separator path[2]
 
 /**
-Path starts with a relative drive indicator.
+Returns whether the given $ath starts with a relative drive indicator.
 For example: `c:tmp', 'd:../foo`, 'e:', ...
 */
 is-drive-relative_ path/string -> bool:
@@ -219,7 +219,7 @@ is-drive-relative_ path/string -> bool:
 
 
 /**
-Is the character $letter a valid volume letter ([a-zA-Z])
+Whether the given character $letter a valid volume letter ([a-zA-Z])
 */
 is-volume-letter_ letter/int -> bool:
   return 'a' <= letter <= 'z' or 'A' <= letter <= 'Z'
