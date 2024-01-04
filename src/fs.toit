@@ -5,6 +5,7 @@
 import system
 import .posix as posix
 import .windows as windows
+import host.directory
 
 /**
 A library to work with paths.
@@ -192,6 +193,25 @@ is-relative path/string -> bool:
   return not is-rooted path
 
 /**
+Converts the $path to an absolute path by prepending the current working directory to the path
+  if it is not already absolute.
+
+The result is cleaned by $clean before being returned.
+*/
+to-absolute path/string -> string:
+  return is-windows_ ? windows.to-absolute path : posix.to-absolute path
+
+/**
+Computes the relative path of $path with respect to $base.
+
+Returns the absolute path of $path, if $path is not accessible relative to $base.
+
+The result is cleaned by $clean before being returned.
+*/
+to-relative path/string base/string -> string:
+  return is-windows_ ? windows.to-relative path base : posix.to-relative path base
+
+/**
 Strips the $basename component of a given $path.
 
 Ignores any trailing separators (unless it is part of the root directory).
@@ -363,6 +383,16 @@ join base/string path1/string path2/string="" path3/string="" path4/string="" ->
   return join [base, path1, path2, path3, path4]
 
 /**
+Splits a path into its components using the seperator valid for the current OS.
+
+On Windows it splits on both '/', '\\' and potentially after ':', on Posix it splits on '/' only.
+If a path (potentially after a leading volume name) starts with a separator, then
+  the entry before the first path segment is a separator.
+*/
+split path/string -> List:
+  return is-windows_ ? windows.split path : posix.split path
+
+/**
 Cleans a path, removing redundant path separators and resolving "." and ".."
   segments.
 This operation is purely syntactical.
@@ -416,108 +446,3 @@ clean "/foo/./bar"           // "/foo/bar"
 clean path/string -> string:
   return is-windows_ ? windows.clean path : posix.clean path
 
-/**
-Cleans the path.
-
-The $path must already use the $separator as separators. Typically this is achieved
-  by calling $from-slash.
-*/
-// TODO(florian): move this function into a `shared_.toit`.
-clean_ path/string --volume-name-size/int --separator/int -> string:
-  // Note that volume-name-size can only be > 0 if we are on Windows.
-  if path.size == volume-name-size:
-    if path.starts-with "\\\\":
-      // A UNC path.
-      return path
-    // Must be a drive path.
-    // Without any path (not even a separator) it's a drive-relative path.
-    return "$path."  // Note the trailing ".".
-
-  // Add a terminating character so we don't need to check for out of bounds.
-  path-size := path.size
-  bytes := ByteArray path-size + 1
-  bytes.replace 0 path
-  bytes[path-size] = separator
-
-  start-index := volume-name-size
-  is-rooted := bytes[start-index] == separator
-
-  separators := []  // Indexes of previous separators.
-  at-separator := false
-  if not is-rooted:
-    // For simplicity treat this as if we just encountered a slash.
-    at-separator = true
-    separators.add (start-index - 1)
-
-  target-index := start-index
-
-  i := start-index
-  while i < path-size:
-    if at-separator and bytes[i] == separator:
-      // Skip consecutive separators.
-      i++
-      continue
-    if at-separator and bytes[i] == '.' and bytes[i + 1] == separator:
-      // Drop "./" segments.
-      i += 2
-      continue
-    if at-separator and
-        bytes[i] == '.' and
-        bytes[i + 1] == '.' and
-        bytes[i + 2] == separator:
-      // Discard the previous segment (between the last two separators).
-      if separators.size < 2:
-        // We don't have a previous segment to discard.
-        if is-rooted:
-          // Just drop them if the path is absolute.
-          i += 3
-          // No need to update `at-separator`. It's still true.
-          continue
-        // Otherwise we have to copy them over.
-        bytes[target-index++] = bytes[i++]
-        bytes[target-index++] = bytes[i++]
-        bytes[target-index++] = bytes[i++]
-        // Move the separator.
-        // If we add a new segment that should be removed, it must be removed up
-        // to the current position. Anything before should not be touched.
-        // This happens when we have leading '..' that need to stay, like in `../abc/..`.
-        separators[0] = target-index - 1
-        // It's not a problem if 'target_index' is one after the '\0' (equal to
-        // 'bytes.size'), but it feels cleaner (and more resistant to future
-        // changes) if we fix it.
-        if target-index > path-size: target-index--
-        // No need to update `at-separator`. It's still true.
-        continue
-      // Still handling '..' here.
-      // Reset to the last '/'.
-      separators.resize (separators.size - 1)
-      target-index = separators.last + 1
-      i += 3
-      // No need to update `at-separator`. It's still true.
-      continue
-
-    if bytes[i] == separator:
-      separators.add target-index
-      at-separator = true
-    else:
-      at-separator = false
-
-    bytes[target-index++] = bytes[i++]
-
-  if target-index == volume-name-size:
-    if volume-name-size == 0: return "."
-    if volume-name-size > 2:
-      // Probably unreachable, but can't hurt to special case.
-      // Must be a UNC path.
-      // For example '//host/share'
-      return path[..volume-name-size]
-    // Must be a relatidrive path.
-    // For example `c:foo/..` which gets cleaned to `c:.`
-    bytes[target-index++] = '.'
-
-  // Drop trailing path separator unless it's the root path.
-  last-char-index := target-index - 1
-  if last-char-index > start-index and bytes[last-char-index] == separator:
-    target-index--
-
-  return bytes[..target-index].to-string

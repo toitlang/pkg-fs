@@ -2,7 +2,8 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the package's LICENSE file.
 
-import .fs show clean_
+import .shared_
+import host.directory
 
 /**
 Windows implementation of the `fs` library.
@@ -65,7 +66,7 @@ All examples use slashes, but the function works with both slashes and backslash
 */
 is-rooted path/string -> bool:
   if path.starts-with "\\" or path.starts-with "/": return true
-  return path.size >= 2 and path[1] == ':'
+  return path.size >= 2 and is-volume-letter_ path[0] and path[1] == ':'
 
 /**
 Whether the given $path is relative.
@@ -76,6 +77,40 @@ to other paths.
 */
 is-relative path/string -> bool:
   return not is-rooted path
+
+/**
+Converts the $path to an absolute path by prepending the current working directory to the path
+  if it is not already absolute.
+
+The result is cleaned by $clean before being returned.
+*/
+to-absolute path/string -> string:
+  if is-absolute path: return clean path
+
+  if is-rooted path:
+    if is-drive-relative_ path:
+      if (is-drive-absolute_ directory.cwd) and directory.cwd[0..2] == path[0..2]:
+        return join [directory.cwd, path[(volume-name-size_ path)..]]
+      else:
+        split-path := split path
+        split-path[0] = "$split-path[0]$SEPARATOR"
+        return join split-path
+    else:
+      if is-drive-absolute_ directory.cwd:
+        return join [volume-indicator directory.cwd, path]
+      // If the cwd is a UNC path, just use the default construction in the next line.
+
+  return join [directory.cwd, path]
+
+/**
+Computes the relative path of $path with respect to $base.
+
+Returns the absolute path of $path, if $path is not accessible relative to $base.
+
+The result is cleaned by $clean before being returned.
+*/
+to-relative path/string base/string -> string:
+  return to-relative_ path base --handle-different-root
 
 /**
 Returns whether the given $path starts with the given $prefix.
@@ -143,6 +178,13 @@ is-absolute "../foo/bar"       // False.
 ```
 */
 is-absolute path/string -> bool:
+  return is-drive-absolute_ path or is-unc-absolute_ path
+
+/**
+Path starts with a UNC volume.
+For example: `//host/share`, `//./UNC/host/share`, ...
+*/
+is-unc-absolute_ path/string -> bool:
   volume-name-size := volume-name-size_ path
 
   if volume-name-size == 0:
@@ -150,19 +192,54 @@ is-absolute path/string -> bool:
     // For example: `foo/bar`, `../foo`, `\foo\bar`, ...
     return false
 
-  assert: path.size >= 2
-  if is-separator path[0] and is-separator path[1]:
-    // Path starts with a UNC volume.
-    // For example: `//host/share`, `//./UNC/host/share`, ...
-    return true
+  return is-separator path[0]
 
-  if path.size == volume-name-size:
-    // Path is just a volume name.
-    // For example: `c:`.
-    return false
+/**
+Returns whether the given $path starts with an absolute drive indicator.
+For example: `c:\\', 'd:/`, ...
+*/
+is-drive-absolute_ path/string -> bool:
+  return path.size >= 3 and
+      is-volume-letter_ path[0] and
+      path[1] == ':' and
+      is-separator path[2]
 
-  // Make sure it's not just a drive-relative path, like `c:foo/bar`.
-  return is-separator path[volume-name-size]
+/**
+Returns whether the given $path starts with a relative drive indicator.
+For example: `c:tmp', 'd:../foo`, 'e:', ...
+*/
+is-drive-relative_ path/string -> bool:
+  return (path.size == 2 and
+          is-volume-letter_ path[0] and
+          path[1] == ':') or
+         (path.size >= 3 and
+          is-volume-letter_ path[0] and
+          path[1] == ':' and
+          not is-separator path[2])
+
+
+/**
+Whether the given character $letter a valid volume letter ([a-zA-Z])
+*/
+is-volume-letter_ letter/int -> bool:
+  return 'a' <= letter <= 'z' or 'A' <= letter <= 'Z'
+
+/**
+Returns the volume indicator from an absolute path.
+
+# Examples
+The examples use `/` as `\\` would need to be escaped in the strings.
+The results would always return `\\` instead of `/`.
+```
+volume-indicator "C:/tmp"            // "C:"
+volume-indicator "//host/share/foo"  // "//host/share"
+```
+
+*/
+volume-indicator path/string -> string?:
+  if not is-absolute path: return null
+  volume-name-size := volume-name-size_ path
+  return path[..volume-name-size]
 
 /**
 Strips the $basename component of a given $path.
@@ -370,6 +447,31 @@ join base/string path1/string path2/string="" path3/string="" path4/string="" ->
   return join [base, path1, path2, path3, path4]
 
 /**
+Splits a path into its components using the seperator valid for the current OS.
+
+Splits on both '/', '\\' and potentially after ':'.
+*/
+split path/string -> List:
+  if path == "": return []
+
+  result := []
+  volume-name-size := volume-name-size_ path
+  if volume-name-size > 0:
+    prefix := path[..volume-name-size]
+    result.add prefix
+    if is-drive-absolute_ path:
+      result.add SEPARATOR
+
+    path = path[volume-name-size..]
+  else if is-separator path[0]:
+    result.add SEPARATOR
+
+  (path.split "/" --drop-empty).do:
+    result.add-all (it.split SEPARATOR --drop-empty)
+
+  return result
+
+/**
 Cleans a path, removing redundant path separators and resolving "." and ".."
   segments.
 This operation is purely syntactical.
@@ -441,7 +543,7 @@ clean-windows_ path/string -> string
   return result
 
 volume-name-size_ path/string -> int:
-  if path.size >= 2 and path[1] == ':':
+  if path.size >= 2 and is-volume-letter_ path[0] and path[1] == ':':
     // Path starts with a drive letter.
     // For example: `c:`.
     // Only drives with a single ascii character are supported.
