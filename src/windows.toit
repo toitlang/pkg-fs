@@ -458,8 +458,9 @@ split path/string -> List:
   volume-name-size := volume-name-size_ path
   if volume-name-size > 0:
     prefix := path[..volume-name-size]
-    if is-drive-absolute_ path: prefix = "$prefix$SEPARATOR"
     result.add prefix
+    if is-drive-absolute_ path:
+      result.add SEPARATOR
 
     path = path[volume-name-size..]
   else if is-separator path[0]:
