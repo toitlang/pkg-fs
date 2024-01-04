@@ -33,7 +33,7 @@ WINDOWS-TESTS ::= [
   [["C:", "\\", "Windows"], "C:\\Windows"],
   [["C:", "a"], "C:a"],
   [["C:", "a", "b"], "C:a\\b"],
-  [["C:","\\", "a"], "C:\\a"],
+  [["C:", "\\", "a"], "C:\\a"],
   [["\\\\host\\share", "foo"], "\\\\host\\share\\foo"],
   [["\\\\host\\share", "foo", "bar"], "\\\\host\\share\\foo\\bar"],
   [["\\"], "\\"],
