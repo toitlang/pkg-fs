@@ -69,7 +69,7 @@ A volume name is the name of a drive, for example `C:` or `D:`, or a UNC
   path, for example `\\\\host\\share`.
 
 ## Examples
-Examples for Windows paths. Each example is followed by the result of calling $is-absolute, $is-rooted, and $is-relative on the path.
+Examples for Windows paths.
 - `C:\\Documents\\Newsletters\\Summer2018.pdf` - an absolute file path from the root of drive `C:`.
 - `\\Program Files\\Custom Utilities\\StringFinder.exe` - a relative path from the root of the current drive.
 - `2018\\January.xlsx` - a relative path to a file in a subdirectory of the current directory.
