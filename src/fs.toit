@@ -207,9 +207,21 @@ Computes the relative path of $path with respect to $base.
 Returns the absolute path of $path, if $path is not accessible relative to $base.
 
 The result is cleaned by $clean before being returned.
+
+Deprecated. Use $(to-relative path --base) instead.
 */
 to-relative path/string base/string -> string:
-  return is-windows_ ? windows.to-relative path base : posix.to-relative path base
+  return to-relative path --base=base
+
+/**
+Computes the relative path of $path with respect to $base.
+
+Returns the absolute path of $path, if $path is not accessible relative to $base.
+
+The result is cleaned by $clean before being returned.
+*/
+to-relative path/string --base/string -> string:
+  return is-windows_ ? windows.to-relative path --base=base : posix.to-relative path --base=base
 
 /**
 Strips the $basename component of a given $path.

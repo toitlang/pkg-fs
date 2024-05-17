@@ -108,9 +108,21 @@ Computes the relative path of $path with respect to $base.
 Returns the absolute path of $path, if $path is not accessible relative to $base.
 
 The result is cleaned by $clean before being returned.
+
+Deprecated. Use $(to-relative path --pase) instead.
 */
 to-relative path/string base/string -> string:
-  return to-relative_ path base --handle-different-root
+  return to-relative_ path --base=base --handle-different-root
+
+/**
+Computes the relative path of $path with respect to $base.
+
+Returns the absolute path of $path, if $path is not accessible relative to $base.
+
+The result is cleaned by $clean before being returned.
+*/
+to-relative path/string --base/string -> string:
+  return to-relative_ path --base=base --handle-different-root
 
 /**
 Returns whether the given $path starts with the given $prefix.

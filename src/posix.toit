@@ -73,9 +73,19 @@ to-absolute path/string -> string:
 Computes the relative path of $path with respect to $base.
 
 The result is cleaned by $clean before being returned.
+
+Deprecated. Use $(to-relative path --base) instead.
 */
 to-relative path/string base/string -> string:
-  return to-relative_ path base
+  return to-relative_ path --base=base
+
+/**
+Computes the relative path of $path with respect to $base.
+
+The result is cleaned by $clean before being returned.
+*/
+to-relative path/string --base/string -> string:
+  return to-relative_ path --base=base
 
 volume-name-size_ path/string -> int:
   return 0

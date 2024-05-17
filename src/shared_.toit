@@ -116,7 +116,7 @@ If it is not possible to be relative, return the absolute path of $path.
 
 The result is cleaned by $clean before being returned.
 */
-to-relative_ path/string base/string --handle-different-root/bool=false -> string:
+to-relative_ path/string --base/string --handle-different-root/bool=false -> string:
   absolute-path := to-absolute path
   absolute-base := to-absolute base
 
