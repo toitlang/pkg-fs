@@ -9,20 +9,20 @@ import system
 import host.directory
 
 test-posix:
-  expect-equals ".." (fs.to-relative "a" "a/b")
-  expect-equals "b" (fs.to-relative "a/b" "a")
-  expect-equals "../../b" (fs.to-relative "a/b" "a/c/d")
-  expect-equals "../../b" (fs.to-relative "/a/b" "/a/c/d")
-  expect-equals "../c/d" (fs.to-relative "/a/c/d" "/a/b" )
+  expect-equals ".." (fs.to-relative "a" --base="a/b")
+  expect-equals "b" (fs.to-relative "a/b" --base="a")
+  expect-equals "../../b" (fs.to-relative "a/b" --base="a/c/d")
+  expect-equals "../../b" (fs.to-relative "/a/b" --base="/a/c/d")
+  expect-equals "../c/d" (fs.to-relative "/a/c/d" --base="/a/b" )
 
 test-windows:
-  expect-equals ".." (fs.to-relative "a" "a/b")
-  expect-equals "b" (fs.to-relative "a/b" "a")
-  expect-equals "..\\..\\b" (fs.to-relative "a/b" "a/c/d")
-  expect-equals "..\\..\\b" (fs.to-relative "c:\\a\\b" "c:\\a\\c\\d")
-  expect-equals "c:\\a\\b" (fs.to-relative "c:\\a\\b" "h:\\a\\c\\d")
-  expect-equals "..\\..\\b" (fs.to-relative "\\\\host\\share\\b" "\\\\host\\share\\a\\b")
-  expect-equals "\\\\host\\share1\\b" (fs.to-relative "\\\\host\\share1\\b" "\\\\host\\share2\\a\\b")
+  expect-equals ".." (fs.to-relative "a" --base="a/b")
+  expect-equals "b" (fs.to-relative "a/b" --base="a")
+  expect-equals "..\\..\\b" (fs.to-relative "a/b" --base="a/c/d")
+  expect-equals "..\\..\\b" (fs.to-relative "c:\\a\\b" --base="c:\\a\\c\\d")
+  expect-equals "c:\\a\\b" (fs.to-relative "c:\\a\\b" --base="h:\\a\\c\\d")
+  expect-equals "..\\..\\b" (fs.to-relative "\\\\host\\share\\b" --base="\\\\host\\share\\a\\b")
+  expect-equals "\\\\host\\share1\\b" (fs.to-relative "\\\\host\\share1\\b" --base="\\\\host\\share2\\a\\b")
 
 main:
   if system.platform == system.PLATFORM-WINDOWS:
