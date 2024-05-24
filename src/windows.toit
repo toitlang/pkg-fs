@@ -109,7 +109,7 @@ Returns the absolute path of $path, if $path is not accessible relative to $base
 
 The result is cleaned by $clean before being returned.
 
-Deprecated. Use $(to-relative path --pase) instead.
+Deprecated. Use $(to-relative path --base) instead.
 */
 to-relative path/string base/string -> string:
   return to-relative_ path --base=base --handle-different-root
