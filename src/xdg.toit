@@ -22,6 +22,8 @@ This library does not try to be smart about different operating systems. For
 
 The XDG specification is available at
   https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+
+Deprecated. Use the 'desktop' package (toitlang/pkg-desktop) instead.
 */
 
 /**
